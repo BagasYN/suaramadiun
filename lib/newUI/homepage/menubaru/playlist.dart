@@ -8,10 +8,10 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:lppl_93fm_suara_madiun/newUI/homepage/menubaru/playlistvideo.dart';
 
 class PlaylistPage extends StatefulWidget {
-  const PlaylistPage({Key? key}) : super(key: key);
+  const PlaylistPage({super.key});
 
   @override
-  _PlaylistPageState createState() => _PlaylistPageState();
+  State<PlaylistPage> createState() => _PlaylistPageState();
 }
 
 class _PlaylistPageState extends State<PlaylistPage>
@@ -27,17 +27,18 @@ class _PlaylistPageState extends State<PlaylistPage>
 
   late final AnimationController _fadeController;
   final PageController _pageController = PageController();
+  final ScrollController _scrollController = ScrollController();
 
   final int itemsPerPage = 5;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 500));
+    _fadeController =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     fetchFirebaseAndPlaylists();
-    _timer = Timer.periodic(
-        const Duration(seconds: 40), (_) => fetchFirebaseAndPlaylists());
+    _timer = Timer.periodic(const Duration(seconds: 40), (_) => fetchFirebaseAndPlaylists());
   }
 
   Future<void> fetchFirebaseAndPlaylists() async {
@@ -57,7 +58,7 @@ class _PlaylistPageState extends State<PlaylistPage>
         }
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      debugPrint('Error fetching data: $e');
       setState(() => isLoading = false);
     }
   }
@@ -75,8 +76,7 @@ class _PlaylistPageState extends State<PlaylistPage>
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           final items = data['items'] ?? [];
-          allPlaylists.addAll(List<Map<String, dynamic>>.from(items.map((item) =>
-          {
+          allPlaylists.addAll(List<Map<String, dynamic>>.from(items.map((item) => {
             'title': item['snippet']['title'],
             'thumbnail': item['snippet']['thumbnails']['high']['url'],
             'videoCount': item['contentDetails']['itemCount'],
@@ -94,7 +94,7 @@ class _PlaylistPageState extends State<PlaylistPage>
       });
       _fadeController.forward();
     } catch (e) {
-      print('Error fetching playlists: $e');
+      debugPrint('Error fetching playlists: $e');
       setState(() => isLoading = false);
     }
   }
@@ -104,6 +104,7 @@ class _PlaylistPageState extends State<PlaylistPage>
     _timer.cancel();
     _fadeController.dispose();
     _pageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -151,96 +152,148 @@ class _PlaylistPageState extends State<PlaylistPage>
                 child: PageView.builder(
                   controller: _pageController,
                   itemCount: totalPages,
+                  onPageChanged: (index) {
+                    setState(() => _currentPage = index);
+                    _scrollController.jumpTo(0); // Reset scroll tiap page
+                  },
                   itemBuilder: (context, pageIndex) {
                     final startIndex = pageIndex * itemsPerPage;
                     final endIndex =
                     (startIndex + itemsPerPage).clamp(0, playlists.length);
-                    final currentItems =
-                    playlists.sublist(startIndex, endIndex);
+                    final currentItems = playlists.sublist(startIndex, endIndex);
 
-                    return ListView.builder(
-                      itemCount: currentItems.length,
-                      padding: EdgeInsets.zero,
-                      itemBuilder: (_, index) {
-                        final p = currentItems[index];
-                        return FadeTransition(
-                          opacity: _fadeController,
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedPlaylistId = p['playlistId'];
-                                selectedPlaylistTitle = p['title'];
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: [
-                                    CachedNetworkImage(
-                                      imageUrl: p['thumbnail'],
-                                      width: double.infinity,
-                                      height: 200,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          Container(
-                                            color: Colors.grey[900],
-                                            height: 200,
-                                          ),
-                                    ),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.6),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            p['title'],
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${p['videoCount']} videos',
-                                            style: const TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 13),
-                                          ),
-                                        ],
-                                      ),
+                    return Scrollbar(
+                      thumbVisibility: true,
+                      controller: _scrollController,
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        itemCount: currentItems.length,
+                        padding: EdgeInsets.zero,
+                        itemBuilder: (_, index) {
+                          final p = currentItems[index];
+                          return FadeTransition(
+                            opacity: _fadeController,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedPlaylistId = p['playlistId'];
+                                  selectedPlaylistTitle = p['title'];
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                    children: [
+                                      CachedNetworkImage(
+                                        imageUrl: p['thumbnail'],
+                                        width: double.infinity,
+                                        height: 200,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            Container(
+                                              color: Colors.grey[900],
+                                              height: 200,
+                                            ),
+                                      ),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              p['title'],
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${p['videoCount']} videos',
+                                              style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 13),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     );
                   },
                 ),
+              ),
+              const SizedBox(height: 10),
+              // Tombol Prev / Next
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: _currentPage > 0
+                        ? () {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                        : null,
+                    label: const Text("Prev", style: TextStyle(fontSize: 13)),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: _currentPage < totalPages - 1
+                        ? () {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                        : null,
+                    label: const Text("Next", style: TextStyle(fontSize: 13)),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               SmoothPageIndicator(
@@ -249,8 +302,8 @@ class _PlaylistPageState extends State<PlaylistPage>
                 effect: const WormEffect(
                   activeDotColor: Colors.white,
                   dotColor: Colors.grey,
-                  dotHeight: 8,
-                  dotWidth: 8,
+                  dotHeight: 6,
+                  dotWidth: 6,
                 ),
               ),
             ],
