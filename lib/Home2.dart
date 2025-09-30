@@ -54,7 +54,7 @@ class _HomePage2State extends State<HomePage2> {
     _loadAllPosts();
     _fetchDataAndUpdateVariablesFromFirebase();
 
-    // Auto refresh API key/channel id tiap 40 detik
+    // Auto refresh 40 dtik
     _timerPlaying = Timer.periodic(const Duration(seconds: 40), (timer) async {
       final data = await _fetchDataFromFirebase();
       final firebaseYoutubeApiKey = data['youtubeApiKey'];
@@ -77,7 +77,7 @@ class _HomePage2State extends State<HomePage2> {
     super.dispose();
   }
 
-  // === fetch firebase untuk youtube api ===
+
   Future<Map<String, dynamic>> _fetchDataFromFirebase() async {
     try {
       final response = await http.get(Uri.parse(
@@ -88,7 +88,7 @@ class _HomePage2State extends State<HomePage2> {
         throw Exception('Failed to fetch data from Firebase');
       }
     } catch (error) {
-      print('Error fetching data from Firebase: $error');
+      debugPrint('Error fetching data from Firebase: $error');
       return {};
     }
   }
@@ -105,7 +105,7 @@ class _HomePage2State extends State<HomePage2> {
         await _fetchYouTubePlaylists();
       }
     } catch (error) {
-      print('Error fetching data from Firebase: $error');
+      debugPrint('Error fetching data from Firebase: $error');
     }
   }
 
@@ -148,12 +148,11 @@ class _HomePage2State extends State<HomePage2> {
         isLoadingPlaylist = false;
       });
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
       setState(() => isLoadingPlaylist = false);
     }
   }
 
-  // === fetch posts lainnya ===
   Future<void> _loadAllPosts() async {
     setState(() => _isLoadingPosts = true);
     final instagramData = await _fetchInstagramPosts();
@@ -242,7 +241,6 @@ class _HomePage2State extends State<HomePage2> {
     }
   }
 
-  // === UI ===
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
   }
@@ -265,7 +263,7 @@ class _HomePage2State extends State<HomePage2> {
                 const SizedBox(height: 8),
                 const RadioScreen(),
 
-                // AnimatedSwitcher untuk transisi antar tab
+                // animasiswitcher tab
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
@@ -322,8 +320,6 @@ class _HomePage2State extends State<HomePage2> {
     }
   }
 
-  /// === Home ala Spotify (Playlist + Feed) ===
-  /// === Home ala Spotify (Playlist + Feed) ===
   Widget _buildSpotifyStyleHome() {
     if (selectedPlaylistId != null && selectedPlaylistTitle != null) {
       return PlaylistVideoListPage(
@@ -346,46 +342,43 @@ class _HomePage2State extends State<HomePage2> {
       },
       color: Colors.white,
       backgroundColor: Colors.blueAccent,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            "Selamat Datang",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
+      child: Scrollbar(
+        thumbVisibility: true,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const Text(
+              "Selamat Datang",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          _buildPlaylistSection(),
-          const SizedBox(height: 20),
-          _buildAutoCarouselSection("Kabar Warga", _kabarWarga),
-          const SizedBox(height: 20),
-          _buildAutoCarouselSection("Instagram Feed", _instagramPosts),
-          const SizedBox(height: 20),
-          _buildAutoCarouselSection("Madiun Today", _madiunTodayPosts),
-        ],
+            const SizedBox(height: 20),
+            _buildPlaylistSection(),
+            const SizedBox(height: 20),
+            _buildAutoCarouselSection("Kabar Warga", _kabarWarga),
+            const SizedBox(height: 20),
+            _buildAutoCarouselSection("Instagram Feed", _instagramPosts),
+            const SizedBox(height: 20),
+            _buildAutoCarouselSection("Madiun Today", _madiunTodayPosts),
+          ],
+        ),
       ),
     );
   }
 
-
-  /// === Playlist section ===
-  /// === Playlist section pakai Auto Carousel ===
   Widget _buildPlaylistSection() {
     if (playlists.isEmpty) return const SizedBox();
 
     final PageController controller = PageController(viewportFraction: 0.7);
     int currentPage = 0;
 
-    // Auto slide timer
     Timer.periodic(const Duration(seconds: 4), (timer) {
       if (controller.hasClients && playlists.isNotEmpty) {
         currentPage++;
-        if (currentPage >= playlists.length) {
-          currentPage = 0;
-        }
+        if (currentPage >= playlists.length) currentPage = 0;
         controller.animateToPage(
           currentPage,
           duration: const Duration(milliseconds: 500),
@@ -408,76 +401,72 @@ class _HomePage2State extends State<HomePage2> {
         const SizedBox(height: 12),
         SizedBox(
           height: 200,
-          child: isLoadingPlaylist
-              ? const Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          )
-              : PageView.builder(
-            controller: controller,
-            itemCount: playlists.length,
-            itemBuilder: (context, index) {
-              final playlist = playlists[index];
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedPlaylistId = playlist['playlistId'];
-                    selectedPlaylistTitle = playlist['title'];
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12)),
-                        child: Image.network(
-                          playlist['thumbnail'],
-                          height: 120,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          playlist['title'],
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: PageView.builder(
+              controller: controller,
+              itemCount: playlists.length,
+              itemBuilder: (context, index) {
+                final playlist = playlists[index];
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedPlaylistId = playlist['playlistId'];
+                      selectedPlaylistTitle = playlist['title'];
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12)),
+                          child: Image.network(
+                            playlist['thumbnail'],
+                            height: 120,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          "${playlist['videoCount']} video",
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            playlist['title'],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            "${playlist['videoCount']} video",
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],
     );
   }
 
-
-  /// === Reusable Auto Carousel Section ===
   Widget _buildAutoCarouselSection(String title,
       List<Map<String, dynamic>> data) {
     if (data.isEmpty) return const SizedBox();
@@ -485,13 +474,10 @@ class _HomePage2State extends State<HomePage2> {
     final PageController controller = PageController(viewportFraction: 0.7);
     int currentPage = 0;
 
-    // Auto slide timer
     Timer.periodic(const Duration(seconds: 4), (timer) {
       if (controller.hasClients && data.isNotEmpty) {
         currentPage++;
-        if (currentPage >= data.length) {
-          currentPage = 0;
-        }
+        if (currentPage >= data.length) currentPage = 0;
         controller.animateToPage(
           currentPage,
           duration: const Duration(milliseconds: 500),
@@ -514,74 +500,76 @@ class _HomePage2State extends State<HomePage2> {
         const SizedBox(height: 12),
         SizedBox(
           height: 180,
-          child: PageView.builder(
-            controller: controller,
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              final post = data[index];
-              return GestureDetector(
-                onTap: () async {
-                  final url = post['url'];
-                  if (url != null && await canLaunchUrl(Uri.parse(url))) {
-                    await launchUrl(Uri.parse(url),
-                        mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      post['image'] != null && post['image']!.isNotEmpty
-                          ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                        child: Image.network(
-                          post['image'],
-                          width: double.infinity,
-                          height: 110,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                          : Container(
-                        width: double.infinity,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[800],
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: PageView.builder(
+              controller: controller,
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                final post = data[index];
+                return GestureDetector(
+                  onTap: () async {
+                    final url = post['url'];
+                    if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                      await launchUrl(Uri.parse(url),
+                          mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        post['image'] != null && post['image']!.isNotEmpty
+                            ? ClipRRect(
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(12),
                           ),
+                          child: Image.network(
+                            post['image'],
+                            width: double.infinity,
+                            height: 110,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : Container(
+                          width: double.infinity,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                          ),
+                          child: const Icon(Icons.image_not_supported,
+                              color: Colors.white70),
                         ),
-                        child: const Icon(Icons.image_not_supported,
-                            color: Colors.white70),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          post['title'] ?? "No Title",
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 14),
-                        ),
-                      )
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            post['title'] ?? "No Title",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
+                          ),
+                        )
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         )
       ],
     );
   }
 
-  /// === Paging untuk semua berita ===
   Widget _buildAllNewsPage() {
     final allPosts = [..._instagramPosts, ..._kabarWarga, ..._madiunTodayPosts];
 
@@ -593,11 +581,14 @@ class _HomePage2State extends State<HomePage2> {
 
     final totalData = allPosts.length;
     final totalPages = (totalData / _perPage).ceil();
+    final PageController _pageController =
+    PageController(initialPage: _currentPage - 1);
 
     return Column(
       children: [
         Expanded(
           child: PageView.builder(
+            controller: _pageController,
             itemCount: totalPages,
             onPageChanged: (index) {
               setState(() {
@@ -609,82 +600,135 @@ class _HomePage2State extends State<HomePage2> {
               final endIndex = ((pageIndex + 1) * _perPage).clamp(0, totalData);
               final visiblePosts = allPosts.sublist(startIndex, endIndex);
 
-              return GridView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: visiblePosts.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.8,
+              final ScrollController _gridController = ScrollController();
+
+              return Scrollbar(
+                thumbVisibility: true,
+                controller: _gridController,
+                child: GridView.builder(
+                  controller: _gridController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: visiblePosts.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.8,
+                  ),
+                  itemBuilder: (context, index) {
+                    final post = visiblePosts[index];
+                    return GestureDetector(
+                      onTap: () async {
+                        final url = post['url'];
+                        if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                          await launchUrl(Uri.parse(url),
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(2, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12)),
+                              child: post['image'] != null &&
+                                  post['image']!.isNotEmpty
+                                  ? Image.network(
+                                post['image'],
+                                height: 100,
+                                fit: BoxFit.cover,
+                              )
+                                  : Container(
+                                height: 100,
+                                color: Colors.grey[800],
+                                child: const Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                post['title'] ?? "No Title",
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                itemBuilder: (context, index) {
-                  final post = visiblePosts[index];
-                  return GestureDetector(
-                    onTap: () async {
-                      final url = post['url'];
-                      if (url != null && await canLaunchUrl(Uri.parse(url))) {
-                        await launchUrl(Uri.parse(url),
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(2, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12)),
-                            child: post['image'] != null && post['image']!.isNotEmpty
-                                ? Image.network(
-                              post['image'],
-                              height: 100,
-                              fit: BoxFit.cover,
-                            )
-                                : Container(
-                              height: 100,
-                              color: Colors.grey[800],
-                              child: const Icon(
-                                Icons.image_not_supported,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              post['title'] ?? "No Title",
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
               );
             },
           ),
         ),
-        // Indicator halaman
+        // tobol next prev
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: _currentPage > 1
+                    ? () {
+                  _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+                    : null,
+                label: const Text("Prev", style: TextStyle(fontSize: 13)),
+              ),
+              const SizedBox(width: 12),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: _currentPage < totalPages
+                    ? () {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+                    : null,
+                label: const Text("Next", style: TextStyle(fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(totalPages, (index) {
