@@ -15,14 +15,14 @@ class BottomNavBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.7),
+        color: Color.fromRGBO(0, 0, 0, 0.7),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Color.fromRGBO(0, 0, 0, 0.4),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
