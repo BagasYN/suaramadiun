@@ -235,14 +235,14 @@ class _FullPlayerPageState extends State<FullPlayerPage>
                             boxShadow: _localPlaying
                                 ? [
                               BoxShadow(
-                                color: Colors.amber.withOpacity(0.5 * glow),
+                                color: Colors.amber,
                                 blurRadius: 40 * glow,
                                 spreadRadius: 8 * glow,
                               )
                             ]
                                 : [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.35),
+                                color: Colors.black,
                                 blurRadius: 22,
                                 offset: const Offset(0, 10),
                               )
@@ -311,7 +311,7 @@ class _FullPlayerPageState extends State<FullPlayerPage>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: Colors.black.withOpacity(0.25)),
+                                  color: Colors.black),
                             ),
                           ),
 
