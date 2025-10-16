@@ -20,13 +20,13 @@ class HomePage2 extends StatefulWidget {
 }
 
 class _HomePage2State extends State<HomePage2> {
-  // === API endpoint ===
+  // api
   static const instagramFeedUrl =
       'https://rss.app/feeds/v1.1/oBYCZ1GV2crnFf21.json';
   static const kabarWargaUrl =
       'https://kominfo.madiunkota.go.id/api/berita/getKabarWarga';
 
-  // === Data ===
+  // data
   List<Map<String, dynamic>> _instagramPosts = [];
   List<Map<String, dynamic>> _kabarWarga = [];
   List<Map<String, dynamic>> _madiunTodayPosts = [];
@@ -35,16 +35,15 @@ class _HomePage2State extends State<HomePage2> {
   String profileLink = "";
   int _selectedIndex = 0;
 
-  // === Playlist ===
+  // playlist
   List<Map<String, dynamic>> playlists = [];
   bool isLoadingPlaylist = true;
   static String youtubeApiKey = "";
   static String youtubeChannelId = "";
-  Timer? _timerPlaying;
   String? selectedPlaylistId;
   String? selectedPlaylistTitle;
 
-  // === Pagination berita ===
+  // Pagination berita
   int _currentPage = 1;
   final int _perPage = 8;
 
@@ -53,30 +52,12 @@ class _HomePage2State extends State<HomePage2> {
     super.initState();
     _loadAllPosts();
     _fetchDataAndUpdateVariablesFromFirebase();
-
-    // Auto refresh 40 dtik
-    _timerPlaying = Timer.periodic(const Duration(seconds: 40), (timer) async {
-      final data = await _fetchDataFromFirebase();
-      final firebaseYoutubeApiKey = data['youtubeApiKey'];
-      final firebaseYoutubeChannelId = data['youtubeChannelId'];
-
-      if (firebaseYoutubeApiKey != null &&
-          firebaseYoutubeChannelId != null &&
-          (firebaseYoutubeApiKey != youtubeApiKey ||
-              firebaseYoutubeChannelId != youtubeChannelId)) {
-        youtubeApiKey = firebaseYoutubeApiKey;
-        youtubeChannelId = firebaseYoutubeChannelId;
-        await _fetchYouTubePlaylists();
-      }
-    });
   }
 
   @override
   void dispose() {
-    _timerPlaying?.cancel();
     super.dispose();
   }
-
 
   Future<Map<String, dynamic>> _fetchDataFromFirebase() async {
     try {
@@ -467,111 +448,157 @@ class _HomePage2State extends State<HomePage2> {
     );
   }
 
-  Widget _buildAutoCarouselSection(String title,
-      List<Map<String, dynamic>> data) {
-    if (data.isEmpty) return const SizedBox();
-
-    final PageController controller = PageController(viewportFraction: 0.7);
-    int currentPage = 0;
-
-    Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (controller.hasClients && data.isNotEmpty) {
-        currentPage++;
-        if (currentPage >= data.length) currentPage = 0;
-        controller.animateToPage(
-          currentPage,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
+  Widget _buildAutoCarouselSection(String title, List<dynamic> posts) {
+    if (posts.isEmpty) {
+      return const SizedBox();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 180,
-          child: Scrollbar(
-            thumbVisibility: true,
-            child: PageView.builder(
-              controller: controller,
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                final post = data[index];
-                return GestureDetector(
-                  onTap: () async {
-                    final url = post['url'];
-                    if (url != null && await canLaunchUrl(Uri.parse(url))) {
-                      await launchUrl(Uri.parse(url),
-                          mode: LaunchMode.externalApplication);
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        post['image'] != null && post['image']!.isNotEmpty
-                            ? ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.network(
-                            post['image'],
-                            width: double.infinity,
-                            height: 110,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                            : Container(
-                          width: double.infinity,
-                          height: 110,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[800],
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                          ),
-                          child: const Icon(Icons.image_not_supported,
-                              color: Colors.white70),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            post['title'] ?? "No Title",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 14),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                );
-              },
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        )
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 210,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index];
+
+              return GestureDetector(
+                onTap: () async {
+                  final url = post['url'];
+                  if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(Uri.parse(url),
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Container(
+                  width: 160,
+                  margin: EdgeInsets.only(
+                    left: index == 0 ? 16 : 8,
+                    right: index == posts.length - 1 ? 16 : 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 6,
+                        offset: const Offset(2, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12)),
+                            child: post['image'] != null &&
+                                post['image']!.isNotEmpty
+                                ? Image.network(
+                              post['image'],
+                              height: 100,
+                              fit: BoxFit.cover,
+                            )
+                                : Container(
+                              height: 100,
+                              color: Colors.grey[800],
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              post['title'] ?? "Tanpa Judul",
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // 🏳️ FLAG UNTUK SEMUA SUMBER BERITA
+                      if (index < 3)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getFlagColor(title),
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomRight: Radius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              _getFlagText(title),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
 
+// flag home
+  Color _getFlagColor(String title) {
+    if (title.toLowerCase().contains('instagram')) return Colors.purpleAccent;
+    if (title.toLowerCase().contains('madiun today')) return Colors.blueAccent;
+    if (title.toLowerCase().contains('kabar warga')) return Colors.redAccent;
+    return Colors.orangeAccent;
+  }
+
+  String _getFlagText(String title) {
+    if (title.toLowerCase().contains('instagram')) return 'Post Terbaru';
+    if (title.toLowerCase().contains('madiun today')) return 'Berita Terbaru';
+    if (title.toLowerCase().contains('kabar warga')) return 'Berita Terbaru';
+    return 'Update';
+  }
+
+
   Widget _buildAllNewsPage() {
-    final allPosts = [..._instagramPosts, ..._kabarWarga, ..._madiunTodayPosts];
+    // isi content e
+    final allPosts = [
+      ..._instagramPosts.map((e) => {...e, 'source': 'Instagram Feed'}),
+      ..._kabarWarga.map((e) => {...e, 'source': 'Kabar Warga'}),
+      ..._madiunTodayPosts.map((e) => {...e, 'source': 'Madiun Today'}),
+    ];
 
     if (allPosts.isEmpty) {
       return const Center(
@@ -609,7 +636,8 @@ class _HomePage2State extends State<HomePage2> {
                   controller: _gridController,
                   padding: const EdgeInsets.all(16),
                   itemCount: visiblePosts.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
@@ -617,6 +645,8 @@ class _HomePage2State extends State<HomePage2> {
                   ),
                   itemBuilder: (context, index) {
                     final post = visiblePosts[index];
+                    final source = post['source'] ?? "";
+
                     return GestureDetector(
                       onTap: () async {
                         final url = post['url'];
@@ -637,37 +667,66 @@ class _HomePage2State extends State<HomePage2> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                        child: Stack(
                           children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(12)),
-                              child: post['image'] != null &&
-                                  post['image']!.isNotEmpty
-                                  ? Image.network(
-                                post['image'],
-                                height: 100,
-                                fit: BoxFit.cover,
-                              )
-                                  : Container(
-                                height: 100,
-                                color: Colors.grey[800],
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  color: Colors.white70,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(12)),
+                                  child: post['image'] != null &&
+                                      post['image']!.isNotEmpty
+                                      ? Image.network(
+                                    post['image'],
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                                      : Container(
+                                    height: 100,
+                                    color: Colors.grey[800],
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    post['title'] ?? "No Title",
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                post['title'] ?? "No Title",
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+
+                            // flag
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getSourceFlagColor(source),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  source,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -681,7 +740,8 @@ class _HomePage2State extends State<HomePage2> {
             },
           ),
         ),
-        // tobol next prev
+
+        // tombol navigasi
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
@@ -727,6 +787,8 @@ class _HomePage2State extends State<HomePage2> {
             ],
           ),
         ),
+
+        // indikator page
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(
@@ -738,9 +800,8 @@ class _HomePage2State extends State<HomePage2> {
                 width: _currentPage == index + 1 ? 16 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _currentPage == index + 1
-                      ? Colors.white
-                      : Colors.white54,
+                  color:
+                  _currentPage == index + 1 ? Colors.white : Colors.white54,
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -749,5 +810,18 @@ class _HomePage2State extends State<HomePage2> {
         ),
       ],
     );
+  }
+
+  Color _getSourceFlagColor(String source) {
+    switch (source.toLowerCase()) {
+      case 'kabar warga':
+        return Colors.redAccent;
+      case 'instagram feed':
+        return Colors.purpleAccent;
+      case 'madiun today':
+        return Colors.blueAccent;
+      default:
+        return Colors.orangeAccent;
+    }
   }
 }
