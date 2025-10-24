@@ -47,6 +47,15 @@ class _HomePage2State extends State<HomePage2> {
   int _currentPage = 1;
   final int _perPage = 8;
 
+  // filter berita
+  String _selectedNewsFilter = 'All';
+  final List<String> _newsFilters = [
+    'All',
+    'Madiun Today',
+    'Kabar Warga',
+    'Instagram Post',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -102,8 +111,7 @@ class _HomePage2State extends State<HomePage2> {
     try {
       do {
         final url =
-            'https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=$youtubeChannelId&maxResults=50&pageToken=${nextPageToken ??
-            ''}&key=$youtubeApiKey';
+            'https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=$youtubeChannelId&maxResults=50&pageToken=${nextPageToken ?? ''}&key=$youtubeApiKey';
 
         final response = await http.get(Uri.parse(url));
         if (response.statusCode == 200) {
@@ -153,8 +161,7 @@ class _HomePage2State extends State<HomePage2> {
         profileLink = data['home_page_url'] ?? "";
 
         return (data['items'] as List)
-            .map<Map<String, dynamic>>((post) =>
-        {
+            .map<Map<String, dynamic>>((post) => {
           'title': post['title'],
           'url': post['url'],
           'image': (post['attachments'] != null &&
@@ -183,8 +190,7 @@ class _HomePage2State extends State<HomePage2> {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body)['data'] as List;
         final posts = data.reversed
-            .map((item) =>
-        {
+            .map((item) => {
           'title': item['judul'],
           'url': item['link'],
           'image': item['gambar'],
@@ -208,8 +214,7 @@ class _HomePage2State extends State<HomePage2> {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body)['data'] as List;
         final posts = data
-            .map((item) =>
-        {
+            .map((item) => {
           'title': item['slug'] ?? 'No Title',
           'url': item['link'] ?? 'No link',
           'image': item['thumbnail'] ?? '',
@@ -243,8 +248,6 @@ class _HomePage2State extends State<HomePage2> {
               children: [
                 const SizedBox(height: 8),
                 const RadioScreen(),
-
-                // animasiswitcher tab
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
@@ -539,8 +542,6 @@ class _HomePage2State extends State<HomePage2> {
                           ),
                         ],
                       ),
-
-                      // 🏳️ FLAG UNTUK SEMUA SUMBER BERITA
                       if (index < 3)
                         Positioned(
                           top: 0,
@@ -576,7 +577,6 @@ class _HomePage2State extends State<HomePage2> {
     );
   }
 
-// flag home
   Color _getFlagColor(String title) {
     if (title.toLowerCase().contains('instagram')) return Colors.purpleAccent;
     if (title.toLowerCase().contains('madiun today')) return Colors.blueAccent;
@@ -591,237 +591,187 @@ class _HomePage2State extends State<HomePage2> {
     return 'Update';
   }
 
-
-  Widget _buildAllNewsPage() {
-    // isi content e
-    final allPosts = [
-      ..._instagramPosts.map((e) => {...e, 'source': 'Instagram Feed'}),
-      ..._kabarWarga.map((e) => {...e, 'source': 'Kabar Warga'}),
-      ..._madiunTodayPosts.map((e) => {...e, 'source': 'Madiun Today'}),
-    ];
-
-    if (allPosts.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    }
-
-    final totalData = allPosts.length;
-    final totalPages = (totalData / _perPage).ceil();
-    final PageController _pageController =
-    PageController(initialPage: _currentPage - 1);
-
-    return Column(
-      children: [
-        Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: totalPages,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index + 1;
-              });
-            },
-            itemBuilder: (context, pageIndex) {
-              final startIndex = pageIndex * _perPage;
-              final endIndex = ((pageIndex + 1) * _perPage).clamp(0, totalData);
-              final visiblePosts = allPosts.sublist(startIndex, endIndex);
-
-              final ScrollController _gridController = ScrollController();
-
-              return Scrollbar(
-                thumbVisibility: true,
-                controller: _gridController,
-                child: GridView.builder(
-                  controller: _gridController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: visiblePosts.length,
-                  gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemBuilder: (context, index) {
-                    final post = visiblePosts[index];
-                    final source = post['source'] ?? "";
-
-                    return GestureDetector(
-                      onTap: () async {
-                        final url = post['url'];
-                        if (url != null && await canLaunchUrl(Uri.parse(url))) {
-                          await launchUrl(Uri.parse(url),
-                              mode: LaunchMode.externalApplication);
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.4),
-                              blurRadius: 6,
-                              offset: const Offset(2, 4),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(12)),
-                                  child: post['image'] != null &&
-                                      post['image']!.isNotEmpty
-                                      ? Image.network(
-                                    post['image'],
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                  )
-                                      : Container(
-                                    height: 100,
-                                    color: Colors.grey[800],
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    post['title'] ?? "No Title",
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // flag
-                            Positioned(
-                              top: 0,
-                              left: 0,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _getSourceFlagColor(source),
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(12),
-                                    bottomRight: Radius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  source,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-
-        // tombol navigasi
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: _currentPage > 1
-                    ? () {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                }
-                    : null,
-                label: const Text("Prev", style: TextStyle(fontSize: 13)),
-              ),
-              const SizedBox(width: 12),
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: _currentPage < totalPages
-                    ? () {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                }
-                    : null,
-                label: const Text("Next", style: TextStyle(fontSize: 13)),
-              ),
-            ],
-          ),
-        ),
-
-        // indikator page
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(totalPages, (index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _currentPage == index + 1 ? 16 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color:
-                  _currentPage == index + 1 ? Colors.white : Colors.white54,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
-
   Color _getSourceFlagColor(String source) {
     switch (source.toLowerCase()) {
       case 'kabar warga':
         return Colors.redAccent;
-      case 'instagram feed':
+      case 'instagram post':
         return Colors.purpleAccent;
       case 'madiun today':
         return Colors.blueAccent;
       default:
         return Colors.orangeAccent;
     }
+  }
+
+  Widget _buildAllNewsPage() {
+    final allPosts = [
+      ..._instagramPosts.map((e) => {...e, 'source': 'Instagram Post'}),
+      ..._kabarWarga.map((e) => {...e, 'source': 'Kabar Warga'}),
+      ..._madiunTodayPosts.map((e) => {...e, 'source': 'Madiun Today'}),
+    ];
+
+    List<Map<String, dynamic>> filteredPosts = _selectedNewsFilter == 'All'
+        ? allPosts
+        : allPosts
+        .where((post) => post['source'] == _selectedNewsFilter)
+        .toList();
+
+    filteredPosts =
+        filteredPosts.reversed.toList(); // tampilkan terbaru di atas
+
+    int totalPages = (filteredPosts.length / _perPage).ceil();
+    final paginatedPosts = filteredPosts.skip((_currentPage - 1) * _perPage).take(_perPage).toList();
+
+    return RefreshIndicator(
+      onRefresh: _loadAllPosts,
+      color: Colors.white,
+      backgroundColor: Colors.blueAccent,
+      child: Scrollbar(
+        thumbVisibility: true,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Semua Berita",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                DropdownButton<String>(
+                  dropdownColor: Colors.black87,
+                  value: _selectedNewsFilter,
+                  items: _newsFilters
+                      .map(
+                        (filter) => DropdownMenuItem(
+                      value: filter,
+                      child: Text(
+                        filter,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedNewsFilter = value!;
+                      _currentPage = 1;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...paginatedPosts.map((post) {
+              return GestureDetector(
+                onTap: () async {
+                  final url = post['url'];
+                  if (url != null && await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(Uri.parse(url),
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      if (post['image'] != null && post['image'].isNotEmpty)
+                        ClipRRect(
+                          borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(12)),
+                          child: Image.network(
+                            post['image'],
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(12)),
+                          ),
+                          child: const Icon(Icons.image_not_supported,
+                              color: Colors.white70),
+                        ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            post['title'] ?? 'Tanpa Judul',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: _getSourceFlagColor(post['source']),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: Text(
+                            post['source'],
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 10),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            if (totalPages > 1)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon:
+                    const Icon(Icons.arrow_back_ios, color: Colors.white70),
+                    onPressed: _currentPage > 1
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                  ),
+                  Text(
+                    "Halaman $_currentPage / $totalPages",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward_ios,
+                        color: Colors.white70),
+                    onPressed: _currentPage < totalPages
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
