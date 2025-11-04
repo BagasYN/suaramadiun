@@ -103,17 +103,36 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
     return SafeArea(
       child: Column(
         children: [
-          // Hanya row back + judul (tanpa container header)
-          Padding(
+          // Header
+          Container(
+            width: double.infinity,
             padding: EdgeInsets.symmetric(
               horizontal: paddingHorizontal,
               vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 33, 72, 122),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromARGB(186, 141, 86, 15),
+                  blurRadius: 4,
+                  offset: Offset(0, 0),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: widget.onBack,
-                  child: const Icon(Icons.arrow_back, color: Colors.white),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white.withValues(alpha: .1),
+                    ),
+                    child: const Icon(Icons.arrow_back, color: Colors.white),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -130,6 +149,7 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
               ],
             ),
           ),
+          const SizedBox(height: 10),
 
           // Player
           if (_selectedVideoId != null && _youtubePlayerController != null)
@@ -166,7 +186,7 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
