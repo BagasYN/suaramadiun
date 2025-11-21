@@ -301,11 +301,16 @@ class _HomePage2State extends State<HomePage2>
   }
 
   Future<void> _fetchKabarWargaAPI() async {
-    try {
+    final url=
+        Uri.parse('https://kominfo.madiunkota.go.id/api/berita/getKabarWarga');
+    try{
       final response = await http.post(
-        Uri.parse(kabarWargaUrl),
+        url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'username': username, 'password': password1}),
+        body: json.encode({
+          'username': username,
+          'password': password1,
+        }),
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -339,16 +344,21 @@ class _HomePage2State extends State<HomePage2>
   Future<void> _fetchMadiunTodayAPI() async {
     try {
       final response = await http.post(
-        Uri.parse('https://MadiunToday.id/api/berita/semua'),
+        Uri.parse('https://madiuntoday.id/api/berita/semua'),
         headers: {'passcode': passcode2},
       );
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final list = data['data'] as List<dynamic>? ?? [];
-        final posts = <Map<String, dynamic>>[];
-        for (var i = 0; i < list.length; i++) {
-          final item = list[i] as Map<String, dynamic>;
-          final pub = item['tanggal'] ?? item['date'] ?? item['created_at'] ?? item['published'];
+        final data = jsonDecode(response.body)['data'] as List? ?? [];
+        List<Map<String, dynamic>> posts = [];
+
+        for (int i = 0; i < data.length; i++) {
+          final item = data[i];
+          dynamic pub = item['tanggal'] ??
+              item['date'] ??
+              item['created_at'] ??
+              item['published'] ??
+              null;
           final fetchedAt = _tryParseDate(pub)?.toIso8601String() ??
               DateTime.now()
                   .toUtc()
@@ -364,12 +374,16 @@ class _HomePage2State extends State<HomePage2>
             'sourceOrderIndex': i,
           });
         }
+
         if (mounted) setState(() => _madiunTodayPosts = posts);
+      } else {
+        debugPrint('MadiunToday API failed: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error fetching MadiunToday: $e');
     }
   }
+
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
@@ -419,9 +433,9 @@ class _HomePage2State extends State<HomePage2>
         return const KeyedSubtree(key: ValueKey(0), child: SizedBox())
             .childOr(_buildSpotifyStyleHome());
       case 1:
-        return KeyedSubtree(key: const ValueKey(1), child: _buildAllNewsPage());
+        return KeyedSubtree(key: const ValueKey(1), child: PlaylistPage());
       case 2:
-        return KeyedSubtree(key: const ValueKey(2), child: PlaylistPage());
+        return KeyedSubtree(key: const ValueKey(2), child: _buildAllNewsPage());
       default:
         return KeyedSubtree(key: const ValueKey(0), child: _buildSpotifyStyleHome());
     }
