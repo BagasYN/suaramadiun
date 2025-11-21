@@ -20,7 +20,7 @@ const AnimationDuration = Duration(milliseconds: 200);
 
 // const.dart
 
-const String username = 'nirmalacantik'; // Ganti dengan passcode kamu
-const String password1 = 'emangcantikh3h3'; // Ganti dengan passcode kamu
+const String username = 'Iy0NnOrM4aL'; // Ganti dengan passcode kamu
+const String password1 = 'M4diUnNo0rM4L'; // Ganti dengan passcode kamu
 const String passcode2 = 'k0taPendekArr2022'; // Ganti dengan passcode kamu
 
