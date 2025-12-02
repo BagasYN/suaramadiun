@@ -35,6 +35,7 @@ class _HomePage2State extends State<HomePage2>
   List<Map<String, dynamic>> _instagramPosts = [];
   List<Map<String, dynamic>> _kabarWarga = [];
   List<Map<String, dynamic>> _madiunTodayPosts = [];
+  Map<String, dynamic>? _liveStreamData;
 
   bool _isLoadingPosts = false;
   String profileLink = "";
@@ -121,7 +122,10 @@ class _HomePage2State extends State<HomePage2>
       if (firebaseYoutubeApiKey != null && firebaseYoutubeChannelId != null) {
         youtubeApiKey = firebaseYoutubeApiKey;
         youtubeChannelId = firebaseYoutubeChannelId;
-        await _fetchYouTubePlaylists();
+        await Future.wait([
+          _fetchYouTubePlaylists(),
+          _fetchLiveStream(),
+        ]);
       }
     } catch (e) {
       debugPrint('Error fetching data from Firebase: $e');
@@ -177,6 +181,42 @@ class _HomePage2State extends State<HomePage2>
     } catch (e) {
       debugPrint('Error: $e');
       if (mounted) setState(() => isLoadingPlaylist = false);
+    }
+  }
+
+  Future<void> _fetchLiveStream() async {
+    if (youtubeApiKey.isEmpty || youtubeChannelId.isEmpty) return;
+
+    final uri = Uri.https('www.googleapis.com', '/youtube/v3/search', {
+      'part': 'snippet',
+      'channelId': youtubeChannelId,
+      'eventType': 'live',
+      'type': 'video',
+      'key': youtubeApiKey,
+    });
+
+    try {
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final items = data['items'] as List<dynamic>? ?? [];
+        if (mounted) {
+          if (items.isNotEmpty) {
+            final liveVideo = items.first as Map<String, dynamic>;
+            setState(() {
+              _liveStreamData = {
+                'videoId': liveVideo['id']['videoId'],
+                'thumbnail': liveVideo['snippet']['thumbnails']['high']['url'],
+              };
+            });
+          } else {
+            setState(() => _liveStreamData = null);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching livestream: $e');
+      if (mounted) setState(() => _liveStreamData = null);
     }
   }
 
@@ -260,6 +300,75 @@ class _HomePage2State extends State<HomePage2>
     return sorted;
   }
 
+  Widget _buildLiveStreamCard() {
+    if (_liveStreamData == null) return const SizedBox.shrink();
+
+    final videoId = _liveStreamData!['videoId'];
+    final url = 'https://www.youtube.com/watch?v=$videoId';
+
+    return GestureDetector(
+      onTap: () async {
+        if (await canLaunchUrl(Uri.parse(url))) {
+          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: DecorationImage(
+            image: NetworkImage(_liveStreamData!['thumbnail']),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.4),
+              BlendMode.darken,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.5),
+              blurRadius: 12,
+              spreadRadius: 2,
+            )
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '● LIVE',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Kami sedang siaran langsung!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<List<Map<String, dynamic>>> _fetchInstagramPosts() async {
     try {
       final response = await http.get(Uri.parse(instagramFeedUrl));
@@ -302,7 +411,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchKabarWargaAPI() async {
     final url=
-        Uri.parse('https://kominfo.madiunkota.go.id/api/berita/getKabarWarga');
+    Uri.parse('https://kominfo.madiunkota.go.id/api/berita/getKabarWarga');
     try{
       final response = await http.post(
         url,
@@ -433,9 +542,23 @@ class _HomePage2State extends State<HomePage2>
         return const KeyedSubtree(key: ValueKey(0), child: SizedBox())
             .childOr(_buildSpotifyStyleHome());
       case 1:
-        return KeyedSubtree(key: const ValueKey(1), child: PlaylistPage());
+        return KeyedSubtree(key: const ValueKey(1), child: _buildAllNewsPage());
       case 2:
-        return KeyedSubtree(key: const ValueKey(2), child: _buildAllNewsPage());
+        return KeyedSubtree(
+          key: const ValueKey(2),
+          child: PlaylistPage(
+            playlists: playlists,
+            youtubeApiKey: youtubeApiKey,
+            youtubeChannelId: youtubeChannelId,
+            isLoading: isLoadingPlaylist,
+            onPlaylistSelected: (id, title) {
+              setState(() {
+                selectedPlaylistId = id;
+                selectedPlaylistTitle = title;
+              });
+            },
+          ),
+        );
       default:
         return KeyedSubtree(key: const ValueKey(0), child: _buildSpotifyStyleHome());
     }
@@ -486,6 +609,9 @@ class _HomePage2State extends State<HomePage2>
                     color: Colors.white,
                     fontSize: 26,
                     fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            if (_liveStreamData != null)
+              _buildLiveStreamCard(),
             const SizedBox(height: 20),
             _buildPlaylistSection(),
             const SizedBox(height: 20),
