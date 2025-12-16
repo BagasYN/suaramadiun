@@ -1,10 +1,10 @@
 //playlist.dart
 
-import 'dart:async';
-import 'dart:convert';
+//import 'dart:async';
+//import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+//import 'package:http/http.dart' as http;
 import 'package:lppl_93fm_suara_madiun/newUI/homepage/menubaru/playlistvideo.dart';
 
 class PlaylistPage extends StatefulWidget {
@@ -32,9 +32,9 @@ class _PlaylistPageState extends State<PlaylistPage> {
 
   @override
   Widget build(BuildContext context) {
-    final paddingHorizontal = MediaQuery.of(context).size.width * 0.04;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    //final paddingHorizontal = MediaQuery.of(context).size.width * 0.04;
+    //final screenHeight = MediaQuery.of(context).size.height;
+    //final screenWidth = MediaQuery.of(context).size.width;
 
     if (selectedPlaylistId != null && selectedPlaylistTitle != null) {
       return PlaylistVideoListPage(
@@ -119,7 +119,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(

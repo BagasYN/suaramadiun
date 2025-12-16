@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-import 'package:lppl_93fm_suara_madiun/newUI/homepage/menubaru/bottom_navigation.dart';
+//import 'package:lppl_93fm_suara_madiun/newUI/homepage/menubaru/bottom_navigation.dart';
 
 
 class VideoPlayerPage extends StatefulWidget {
@@ -14,12 +14,12 @@ class VideoPlayerPage extends StatefulWidget {
   final List<Map<String, dynamic>> playlistVideos;
 
   const VideoPlayerPage({
-    Key? key,
+    super.key,
     required this.videoId,
     required this.videoTitle,
     required this.channelTitle,
     required this.playlistVideos,
-  }) : super(key: key);
+  });
 
   @override
   State<VideoPlayerPage> createState() => _VideoPlayerPageState();
@@ -87,7 +87,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           handleColor: Colors.amberAccent,
         ),
         onReady: () {
-          print('Player is ready.');
+          debugPrint('Player is ready.');
         },
       ),
       builder: (context, player) {
@@ -133,7 +133,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha:0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
@@ -192,7 +192,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
@@ -237,7 +237,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             Text(
                               _currentChannelTitle,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -285,7 +285,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               video['videoId'], video['title'], video['channelTitle']),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -412,7 +412,7 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
         isLoading = false;
       });
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
       setState(() => isLoading = false);
     }
   }
@@ -460,7 +460,7 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -518,7 +518,7 @@ class _PlaylistVideoListPageState extends State<PlaylistVideoListPage> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
