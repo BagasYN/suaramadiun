@@ -101,6 +101,7 @@ class _HomePage2State extends State<HomePage2>
     }
   }
 
+  //api youtube
   Future<Map<String, dynamic>> _fetchDataFromFirebase() async {
     try {
       final res = await http
@@ -226,7 +227,6 @@ class _HomePage2State extends State<HomePage2>
     final instagramData = await _fetchInstagramPosts();
     if (mounted) setState(() => _instagramPosts = instagramData);
 
-    // Fetch other sources in parallel
     await Future.wait([
       _fetchKabarWargaAPI(),
       _fetchMadiunTodayAPI(),
@@ -320,13 +320,13 @@ class _HomePage2State extends State<HomePage2>
             image: NetworkImage(_liveStreamData!['thumbnail']),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.4),
+              Colors.black.withValues(alpha: 0.4),
               BlendMode.darken,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.red.withOpacity(0.5),
+              color: Colors.red.withValues(alpha: 0.5),
               blurRadius: 12,
               spreadRadius: 2,
             )
@@ -466,8 +466,7 @@ class _HomePage2State extends State<HomePage2>
           dynamic pub = item['tanggal'] ??
               item['date'] ??
               item['created_at'] ??
-              item['published'] ??
-              null;
+              item['published'];
           final fetchedAt = _tryParseDate(pub)?.toIso8601String() ??
               DateTime.now()
                   .toUtc()
@@ -494,8 +493,25 @@ class _HomePage2State extends State<HomePage2>
   }
 
 
-  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+  // Modifikasi _onItemTapped
+  void _onItemTapped(int index) {
+    // Jika tombol Home (index 0) ditekan
+    if (index == 0) {
+      // Dan saat ini kita sedang melihat Playlist Video (selectedPlaylistId != null)
+      if (selectedPlaylistId != null) {
+        // Kita reset state internal playlist
+        setState(() {
+          selectedPlaylistId = null;
+          selectedPlaylistTitle = null;
+          _selectedIndex = index; // Tetap set index agar UI me-refresh
+        });
+        return; // Selesai, kembali ke Home List View
+      }
+    }
 
+    // Jika tombol lain ditekan, atau Home ditekan dan kita sudah di List View Home
+    setState(() => _selectedIndex = index);
+  }
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -564,10 +580,7 @@ class _HomePage2State extends State<HomePage2>
     }
   }
 
-  // helper to preserve original behavior of returning child widgets
-  // (this small extension avoids duplicating KeyedSubtree for case 0)
-  // ignore: unused_element
-  Widget _buildSpotifyStyleHomeWrapper() => _buildSpotifyStyleHome();
+  //Widget _buildSpotifyStyleHomeWrapper() => _buildSpotifyStyleHome();
 
   Widget _buildSpotifyStyleHome() {
     if (_isLoadingPosts) {
@@ -1048,7 +1061,7 @@ class _HomePage2State extends State<HomePage2>
   }
 }
 
-// small extension method to mimic fallback KeyedSubtree behavior concisely
+
 extension _WidgetExt on Widget {
   Widget childOr(Widget other) => other;
 }
